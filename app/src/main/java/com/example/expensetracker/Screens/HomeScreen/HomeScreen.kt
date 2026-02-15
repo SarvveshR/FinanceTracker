@@ -1,6 +1,7 @@
 package com.example.expensetracker.Screens.HomeScreen
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,13 +34,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.vector.ImageVector
 import com.example.expensetracker.dataclasses.CardNetwork
 
 import com.example.expensetracker.R
@@ -48,12 +53,14 @@ import com.example.expensetracker.ui.theme.DarkGreen
 
 @Composable
 
-fun homeScreen(viewModel: ViewModel, goToAddScreen: () -> Unit,goToCardScreen:()->Unit) {
+fun homeScreen(viewModel: ViewModel, goToAddScreen: () -> Unit,goToCardScreen:()->Unit,goToEditSaveScreen:()->Unit) {
     val card = viewModel.selectedCard
     var isSeeAll by remember { mutableStateOf(false) }
     //for lazy column
     var list=viewModel.selectedCard.transaction?:emptyList()
     var isApi by remember{mutableStateOf(false)}
+
+
 
 
 
@@ -229,12 +236,15 @@ fun homeScreen(viewModel: ViewModel, goToAddScreen: () -> Unit,goToCardScreen:()
             ) {
 
                 items(count=list.size) { index ->
+                    var isEditDeleteDropDown by remember{mutableStateOf(false)}
 
                     Spacer(modifier = Modifier.padding(5.dp))
                     Box(
                         modifier = Modifier
                             .height(70.dp)
+                            .clickable(onClick={isEditDeleteDropDown=true})
                             .fillMaxWidth()
+
 
 
                     ) {
@@ -272,8 +282,9 @@ fun homeScreen(viewModel: ViewModel, goToAddScreen: () -> Unit,goToCardScreen:()
 
                                         , fontSize = 15.sp)
                                     Spacer(modifier = Modifier.padding(2.dp))
-                                    Text(list.get(index).time, color = Color.Gray)
-
+                                    Column(){
+                                        Text(list.get(index).date, color = Color.Gray)
+                                    }
                                 }
 
 
@@ -308,6 +319,31 @@ fun homeScreen(viewModel: ViewModel, goToAddScreen: () -> Unit,goToCardScreen:()
                         }
 
 
+                            DropdownMenu(expanded=isEditDeleteDropDown, onDismissRequest = {isEditDeleteDropDown=false}) {
+                                IconButton(onClick={
+                                    isEditDeleteDropDown=false
+                                    viewModel.transaction=viewModel.selectedCard.transaction.get(list.size-1-index)
+                                    viewModel.expense=viewModel.transaction.amount.toString()
+                                    goToEditSaveScreen()
+
+
+                                }){
+                                    Icon(imageVector = Icons.Default.Edit, contentDescription = "Edit")
+
+                                }
+                                IconButton(onClick={
+                                    isEditDeleteDropDown=false
+                                    goToEditSaveScreen()
+
+                                }){
+                                    Icon(imageVector = Icons.Default.Delete, contentDescription = "Edit")
+
+                                }
+
+
+
+                        }
+
                     }
 
 
@@ -330,6 +366,7 @@ fun homeScreen(viewModel: ViewModel, goToAddScreen: () -> Unit,goToCardScreen:()
             viewModel.getStatus()
            Text(viewModel.status)
         }
+
 
 
     }

@@ -23,33 +23,30 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.getValue
-
-import androidx.compose.ui.graphics.Color
-
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.expensetracker.ViewModel.ViewModel
+import com.example.expensetracker.dataclasses.Categories
 import com.example.expensetracker.dataclasses.Transaction
 import com.vanpra.composematerialdialogs.rememberMaterialDialogState
 
 @Composable
-fun saveScreen(
-    viewModel: ViewModel,
-    isIncome: Boolean,
-    isExpense: Boolean,
-
-    goBackToAddScreen: () -> Unit,
-    goToCategoryScreen: (Boolean, Boolean) -> Unit
-) {
+fun EditSaveScreen( viewModel: ViewModel,
+                    isIncome: Boolean,
+                    isExpense: Boolean,
+                    goToCategoryScreen:(Boolean, Boolean)->Unit,
+                    goToHomeScreen:()-> Unit
+){
     var catname by remember { mutableStateOf("Choose Category") }
     var datePicker by remember { mutableStateOf(false) }
     var timepicker by remember { mutableStateOf(false) }
@@ -60,7 +57,15 @@ fun saveScreen(
     val toast = Toast.makeText(LocalContext.current, "Enter an amount", Toast.LENGTH_SHORT)
 
 
-    var localContext= LocalContext.current
+    var type: Categories by remember{mutableStateOf(viewModel.transaction.type)}
+    var date by remember{mutableStateOf(viewModel.transaction.date)}
+    var time by remember{mutableStateOf(viewModel.transaction.date)}
+    var description by remember{mutableStateOf(viewModel.transaction.date)}
+    var amount by remember{mutableStateOf(viewModel.transaction.date)}
+    var expense by remember{mutableStateOf(viewModel.transaction.amount)}
+    var  income by remember{mutableStateOf(viewModel.transaction.date)}
+
+
 
 
 
@@ -85,7 +90,8 @@ fun saveScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(50.dp)
             ) {
-                IconButton(onClick = { goBackToAddScreen() }) {
+                IconButton(onClick = { goToHomeScreen()
+                                        viewModel.transaction= Transaction()}) {
                     Icon(
                         imageVector = Icons.Default.KeyboardArrowLeft,
                         contentDescription = "Back",
@@ -96,7 +102,7 @@ fun saveScreen(
                 }
 
                 Text(
-                    "Add Amount",
+                    "Edit Amount",
                     modifier = Modifier.padding(10.dp),
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 20.sp
@@ -341,53 +347,11 @@ fun saveScreen(
                         viewModel.transaction = viewModel.transaction.copy(
                             income = isIncome,
                             expense = isExpense
-                        )
-                        if(viewModel.selectedCard.credit){
-                            if(viewModel.selectedCard.creditsUsed + viewModel.transaction.amount <= viewModel.selectedCard.creditLimit){
-                                //changing transaction id,isIncome and isExpense in object
-                                viewModel.addTransaction(
-                                    viewModel.transaction,
-                                    viewModel.selectedCard.cardId!!
-                                )
-                                viewModel.transaction = Transaction()
-                                viewModel.expense = ""
-                                goBackToAddScreen()
-                            }
-                            else{
-                                Toast.makeText(localContext,"Credit Limit Exceeded",Toast.LENGTH_SHORT).show()
+                        )//changing transaction id,isIncome and isExpense in object
+                        viewModel.addTransaction(viewModel.transaction,viewModel.selectedCard.cardId!!)
 
-                            }
-                        }
-                        else if(viewModel.selectedCard.debit){
-                            if(viewModel.transaction.income){
-                              //changing transaction id,isIncome and isExpense in object
-                                viewModel.addTransaction(
-                                    viewModel.transaction,
-                                    viewModel.selectedCard.cardId!!
-                                )
-                                viewModel.transaction = Transaction()
-                                viewModel.expense = ""
-                                goBackToAddScreen()
-
-                            }
-                            else if(viewModel.transaction.expense){
-                                if(viewModel.selectedCard.balance - viewModel.transaction.amount>=0){
-                                   //changing transaction id,isIncome and isExpense in object
-                                    viewModel.addTransaction(
-                                        viewModel.transaction,
-                                        viewModel.selectedCard.cardId!!
-                                    )
-                                    viewModel.transaction = Transaction()
-                                    viewModel.expense = ""
-                                    goBackToAddScreen()
-                                }
-                                else{
-                                    Toast.makeText(localContext,"No balance",Toast.LENGTH_SHORT).show()
-                                }
-                            }
-
-                            
-                        }
+                        viewModel.transaction= Transaction()
+                        viewModel.expense=""
 
                     }, modifier = Modifier
                         .align(Alignment.TopCenter)
@@ -400,7 +364,12 @@ fun saveScreen(
                     )
 
                 }
-
+                Text(
+                    "Save",
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold
+                )
             }
 
 
@@ -434,16 +403,14 @@ fun saveScreen(
         }
         // for date and time picker
         if (datePicker || timepicker) {
-            timeAndDatePicker(
-                viewModel, dateDialogState, timeDialogState, isDatePicker = { dp ->
+            timeAndDatePicker(viewModel, dateDialogState, timeDialogState, isDatePicker = { dp ->
                 datePicker = dp
             }, isTimePicker = { tp ->
                 timepicker = false
 
             },
-                localDate = null,
-                localTime = null
-            )
+                localTime = viewModel.transaction.time,
+                localDate = viewModel.transaction.date)
 
 
         }
@@ -459,21 +426,5 @@ fun saveScreen(
 
 
     }
+
 }
-
-
-//onClick = {
-
-//   viewModel.transaction = viewModel.transaction.copy(
-//       id = viewModel.id,
-//        isIncome = isIncome,
-//        isExpense = isExpense
-//    )//changing transaction id,isIncome and isExpense in object
-//   viewModel.list.add(viewModel.transaction)//adding transaction
-//    viewModel.transaction =
-//        Transaction()//changing viewModel transaction object to empty /default
-//    viewModel.expense = ""// changing expense to default
-//   goBackToAddScreen()
-
-
-

@@ -24,6 +24,7 @@ import com.example.expensetracker.Screens.AddScreen.addScreen
 import com.example.expensetracker.Screens.AnalyticsScreen.Analytics
 import com.example.expensetracker.Screens.HomeScreen.homeScreen
 import com.example.expensetracker.Screens.SettingScreen.Settings
+import com.example.expensetracker.Screens.saveScreen.EditSaveScreen
 import com.example.expensetracker.Screens.saveScreen.income_or_expense_Categories
 import com.example.expensetracker.Screens.saveScreen.saveScreen
 import com.example.expensetracker.ViewModel.ViewModel
@@ -34,52 +35,52 @@ fun navigation() {
     val navController = rememberNavController()
     val viewModel: ViewModel = viewModel()
 
-    Scaffold(    contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0),
+    Scaffold(
+        contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0),
         bottomBar = {
-        NavigationBar() {
-            viewModel.navBarItems.forEachIndexed { index, item ->
-                NavigationBarItem(
-                    selected = viewModel.selectedIndex == index,
-                    onClick = {
-                        viewModel.selectedIndex = index
-                        if (viewModel.selectedIndex == 0) {
-                            navController.navigate(HomeScreen)
-                        } else if (viewModel.selectedIndex == 1) {
-                            navController.navigate(CardsScreen)
-                        } else if (viewModel.selectedIndex == 2) {
-                            navController.navigate(AddScreen)
-                        } else if (viewModel.selectedIndex == 3) {
-                            navController.navigate(Analytics)
-                        }
-                        else{
-                            navController.navigate(Settings)
-                        }
+            NavigationBar() {
+                viewModel.navBarItems.forEachIndexed { index, item ->
+                    NavigationBarItem(
+                        selected = viewModel.selectedIndex == index,
+                        onClick = {
+                            viewModel.selectedIndex = index
+                            if (viewModel.selectedIndex == 0) {
+                                navController.navigate(HomeScreen)
+                            } else if (viewModel.selectedIndex == 1) {
+                                navController.navigate(CardsScreen)
+                            } else if (viewModel.selectedIndex == 2) {
+                                navController.navigate(AddScreen)
+                            } else if (viewModel.selectedIndex == 3) {
+                                navController.navigate(Analytics)
+                            } else {
+                                navController.navigate(Settings)
+                            }
 
-                    },
-                    icon = {
-                        Icon(
-                            imageVector =
-                                if (viewModel.selectedIndex == index) {
-                                    item.selectedIcon
-                                } else {
-                                    item.unSelectedIcon
-                                }, contentDescription = item.title
+                        },
+                        icon = {
+                            Icon(
+                                imageVector =
+                                    if (viewModel.selectedIndex == index) {
+                                        item.selectedIcon
+                                    } else {
+                                        item.unSelectedIcon
+                                    }, contentDescription = item.title
 
-                        )
+                            )
 
-                    },
-                    label = { Text(item.title) }
+                        },
+                        label = { Text(item.title) }
 
 
-                )
+                    )
+
+
+                }
 
 
             }
 
-
-        }
-
-    }) { innerpadding ->
+        }) { innerpadding ->
         Box(
             modifier = Modifier
                 .padding(innerpadding)
@@ -99,20 +100,30 @@ fun navigation() {
                             navController.navigate(
                                 CardsScreen
                             )
-                        })
+                        },
+                        goToEditSaveScreen = {
+                            navController.navigate(
+                                EditSaveScreenn(
+
+                                    viewModel.transaction.income,
+                                    viewModel.transaction.expense
+                                )
+                            )
+                        } )
 
                 }
                 composable<CardsScreen> {
-                    val cardLst by viewModel.cards.collectAsState()
+                    val dataErrorLoading by viewModel.cards
                     cardDisplay(
                         viewModel,
-                        cardLst=cardLst,
+                        dataErrorLoading = dataErrorLoading,
                         goToCardsScreen = { navController.navigate(AddCardsScreen) },
                         goToAddCardsScreen = {
                             navController.navigate(
                                 AddCardsScreen
                             )
-                        },)
+                        },
+                    )
                 }
                 composable<AddScreen>() {
                     addScreen(
@@ -132,10 +143,10 @@ fun navigation() {
                 }
 
 
-                composable<Analytics>{
+                composable<Analytics> {
                     Analytics()
                 }
-                composable<Settings>{
+                composable<Settings> {
                     Settings()
                 }
 
@@ -154,7 +165,8 @@ fun navigation() {
                                 IncomeExpenseCategoryScreen(
                                     isIncome,
                                     isExpense,
-
+                                    fromSave = true,
+                                    fromEdit = false
                                     )
                             )
                         })
@@ -164,27 +176,47 @@ fun navigation() {
                     val arguements = it.toRoute<IncomeExpenseCategoryScreen>()
                     income_or_expense_Categories(
                         viewModel,
-                        arguements.isIncome,
-                        arguements.isExpense,
+                        isIncome = arguements.isIncome,
+                        isExpense = arguements.isExpense,
                         goBackToSaveScreen = { isIncome, isExpense ->
                             navController.navigate(
                                 SaveScreen(
                                     isIncome,
                                     isExpense,
 
-
                                     )
                             )
-                        })
+                        },
+                        goBackToEditSaveScreen ={ isIncome,isExpense->
+                            navController.navigate(EditSaveScreenn(isIncome = isIncome, isExpense = isExpense ))
+                        },
+                        fromSaveScreen = arguements.fromSave,
+                        fromEditSaveScreen = arguements.fromEdit
+                    )
 
+
+                }
+                composable<EditSaveScreenn> {
+                    val arguements = it.toRoute<EditSaveScreenn>()
+                    EditSaveScreen(
+                        viewModel = viewModel,
+                        isExpense = arguements.isExpense,
+                        isIncome = arguements.isIncome,
+                        goToHomeScreen = {
+                            navController.navigate(
+                                HomeScreen
+                            )
+                        },
+                        goToCategoryScreen = { isIncome, isExpense ->
+                            navController.navigate(IncomeExpenseCategoryScreen(isIncome, isExpense,false,true))
+                        }
+                    )
 
                 }
 
                 composable<AddCardsScreen> {
                     addCard(viewModel, goToCardsScreen = { navController.navigate(CardsScreen) })
                 }
-
-
 
 
             }
@@ -198,6 +230,7 @@ fun navigation() {
 
 @Serializable
 data object HomeScreen
+
 @Serializable
 data object CardsScreen
 
@@ -211,10 +244,6 @@ data object Analytics
 data object Settings
 
 
-
-
-
-
 @Serializable
 data class SaveScreen(
     var isIncome: Boolean,
@@ -222,10 +251,14 @@ data class SaveScreen(
 )//var id :String, var name:String
 
 @Serializable
-data class IncomeExpenseCategoryScreen(var isIncome: Boolean, var isExpense: Boolean)
+data class IncomeExpenseCategoryScreen(var isIncome: Boolean, var isExpense: Boolean, var fromSave: Boolean, var fromEdit: Boolean)
 
 @Serializable
 data object AddCardsScreen
 
 
-
+@Serializable
+data class EditSaveScreenn(
+    var isIncome: Boolean,
+    var isExpense: Boolean
+)

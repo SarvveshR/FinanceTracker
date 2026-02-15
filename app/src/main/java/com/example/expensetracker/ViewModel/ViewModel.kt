@@ -15,6 +15,7 @@ import androidx.compose.material.icons.outlined.Analytics
 import androidx.compose.material.icons.outlined.CreditCard
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -26,6 +27,7 @@ import com.example.expensetracker.RetrofitInstance
 import com.example.expensetracker.dataclasses.BottomNavigationBar
 import com.example.expensetracker.dataclasses.Card
 import com.example.expensetracker.dataclasses.Categories
+import com.example.expensetracker.dataclasses.DataErrorLoading
 import com.example.expensetracker.dataclasses.Transaction
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -63,8 +65,8 @@ class ViewModel : ViewModel() {
     var transaction by mutableStateOf<Transaction>(Transaction())
 
 
-    private val _cards = MutableStateFlow<List<Card>>(emptyList())// read and write
-    val cards: StateFlow<List<Card>> = _cards// only read
+    private val _cards = mutableStateOf<DataErrorLoading>(DataErrorLoading())// read and write
+    val cards: State<DataErrorLoading> = _cards// only read
     init{
         getCards()
     }
@@ -152,13 +154,19 @@ class ViewModel : ViewModel() {
 
     fun getCards(){
         viewModelScope.launch {
+            var dataErrorLoading= DataErrorLoading()
+
             try{
                 val cardLst=RetrofitInstance.service.getCards()
-                _cards.value= cardLst
+                dataErrorLoading=dataErrorLoading.copy(loading = false, cards = cardLst)
+                _cards.value=dataErrorLoading
                 Log.d("Successful","card list successfully fetched")
 
             }
             catch(e: Exception){
+                dataErrorLoading=dataErrorLoading.copy(error="Error Fetching Cards ${e.message}")
+                _cards.value=dataErrorLoading
+
                 Log.e("unsuccessful","Failed to fetch",e)
 
 
@@ -169,28 +177,37 @@ class ViewModel : ViewModel() {
 
     fun addTransaction( transaction:Transaction,cardId:Int){
         viewModelScope.launch {
-            try{
-                val newTransaction=RetrofitInstance.service.addTransaction(cardId,transaction)
+            var dataErrorLoading= DataErrorLoading()
 
+            try{
+                val newCardBalanceTransactionDTO= RetrofitInstance.service.addTransaction(cardId,transaction)
+                val newTransaction= newCardBalanceTransactionDTO.responseTransactionDTO
+                if (newTransaction == null) {
+                    Log.e("AddTransaction", "Backend returned null transaction")
+
+                }
                 var transactionList:List<Transaction> =selectedCard.transaction
                 transactionList= transactionList+newTransaction
 
 
-                val newCard:Card=selectedCard.copy(transaction=transactionList)
-                val newCardList= cards.value.toMutableList()
+                val newCard:Card=selectedCard.copy( balance = newCardBalanceTransactionDTO.balance, creditsUsed = newCardBalanceTransactionDTO.creditsUsed, transaction=transactionList)
+                val newCardList= cards.value.cards.toMutableList()
                 newCardList.set(selectedCardIndex,newCard)
-                _cards.value=newCardList.toList()
+                _cards.value=dataErrorLoading.copy(loading=false,cards=newCardList.toList())
                 selectedCard=newCardList.get(selectedCardIndex)
                 Log.d("Successful","transaction successfully fetched")
 
             }
             catch(e: Exception){
+                _cards.value= dataErrorLoading.copy(error=" Error to Fetch ${e.message}")
                 Log.e("unsuccessful","Failed to fetch",e)
 
             }
         }
 
     }
+
+
 
 
 

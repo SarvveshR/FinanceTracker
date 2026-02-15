@@ -39,7 +39,10 @@ fun income_or_expense_Categories(
     viewModel: ViewModel,
     isIncome: Boolean,
     isExpense: Boolean,
+    fromSaveScreen: Boolean,
+    fromEditSaveScreen: Boolean,
     goBackToSaveScreen: (Boolean, Boolean) -> Unit,
+    goBackToEditSaveScreen: (Boolean, Boolean) -> Unit
 
 ) {
 
@@ -50,7 +53,16 @@ fun income_or_expense_Categories(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(50.dp)
         ) {
-            IconButton(onClick = { goBackToSaveScreen(isIncome, isExpense) }) {
+            IconButton(onClick = {
+                if (fromSaveScreen) {
+                    goBackToSaveScreen(
+                        isIncome,
+                        isExpense,
+                    )
+                } else {
+                    goBackToEditSaveScreen(isIncome, isExpense)
+                }
+            }) {
                 Icon(
                     imageVector = Icons.Default.KeyboardArrowLeft,
                     contentDescription = "Back",
@@ -61,13 +73,11 @@ fun income_or_expense_Categories(
             }
 
             Text(
-                if(isIncome){
+                if (isIncome) {
                     "Income categories"
-                }
-                else{
+                } else {
                     "Expense categories"
-                }
-                ,
+                },
                 modifier = Modifier.padding(10.dp),
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 20.sp
@@ -86,7 +96,7 @@ fun income_or_expense_Categories(
             items(
                 items = if (isIncome) {
                     viewModel.incomeList
-                }  else  {
+                } else {
                     viewModel.expenseList
                 }, key = { category -> category.id }) { category ->
                 Box(
@@ -96,19 +106,32 @@ fun income_or_expense_Categories(
                         .background(Color.White)
                         .border(width = 2.dp, color = Color.LightGray)
                         .clickable(onClick = {
-                            viewModel.transaction= viewModel.transaction.copy(type=viewModel.transaction.type.copy(category.id,category.name))
-
-                            goBackToSaveScreen(
-                                isIncome,
-                                isExpense,
+                            viewModel.transaction = viewModel.transaction.copy(
+                                type = viewModel.transaction.type.copy(
+                                    category.id,
+                                    category.name
+                                )
                             )
+                            if (fromSaveScreen) {
+                                goBackToSaveScreen(
+                                    isIncome,
+                                    isExpense,
+                                )
+                            } else {
+                                goBackToEditSaveScreen(isIncome, isExpense)
+                            }
+
                         })
                 ) {
-                    Image(painterResource(
-                        viewModel.categoryHash.get(category.id)!!
-                    ),
+                    Image(
+                        painterResource(
+                            viewModel.categoryHash.get(category.id)!!
+                        ),
                         contentDescription = "${category.name}",
-                        modifier=Modifier.size(80.dp).align(Alignment.Center))
+                        modifier = Modifier
+                            .size(80.dp)
+                            .align(Alignment.Center)
+                    )
 
                     Text(
                         category.name,
