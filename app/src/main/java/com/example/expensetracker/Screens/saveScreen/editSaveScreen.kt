@@ -54,7 +54,7 @@ fun EditSaveScreen( viewModel: ViewModel,
 
     val dateDialogState = rememberMaterialDialogState()
     val timeDialogState = rememberMaterialDialogState()
-    val toast = Toast.makeText(LocalContext.current, "Enter an amount", Toast.LENGTH_SHORT)
+    val context=LocalContext.current
 
 
     var type: Categories by remember{mutableStateOf(viewModel.transaction.type)}
@@ -348,10 +348,22 @@ fun EditSaveScreen( viewModel: ViewModel,
                             income = isIncome,
                             expense = isExpense
                         )//changing transaction id,isIncome and isExpense in object
-                        viewModel.addTransaction(viewModel.transaction,viewModel.selectedCard.cardId!!)
+                        if(viewModel.selectedCard.transaction.get(viewModel.transactionIndex) == viewModel.transaction){
+                            Toast.makeText(context,"Make Some changes", Toast.LENGTH_SHORT).show()
+                        }
 
-                        viewModel.transaction= Transaction()
-                        viewModel.expense=""
+                        else{
+
+
+                            viewModel.editTransaction(viewModel.transaction,viewModel.selectedCard.cardId!!,viewModel.transaction.id!!)
+                            goToHomeScreen()
+                            viewModel.transaction= Transaction()
+                            viewModel.expense=""
+                        }
+
+                    Toast.makeText(context,viewModel.toastMessage.value,Toast.LENGTH_SHORT).show()
+
+
 
                     }, modifier = Modifier
                         .align(Alignment.TopCenter)
@@ -393,7 +405,8 @@ fun EditSaveScreen( viewModel: ViewModel,
                                 viewModel.transaction.copy(amount = viewModel.expense.toInt())
                             viewModel.isKeyPad = false
                         } else {
-                            toast.show()
+                             Toast.makeText(context, "Enter an amount", Toast.LENGTH_SHORT).show()
+
 
                         }
                     })

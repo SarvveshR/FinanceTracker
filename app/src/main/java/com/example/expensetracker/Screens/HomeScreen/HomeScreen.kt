@@ -321,8 +321,10 @@ fun homeScreen(viewModel: ViewModel, goToAddScreen: () -> Unit,goToCardScreen:()
 
                             DropdownMenu(expanded=isEditDeleteDropDown, onDismissRequest = {isEditDeleteDropDown=false}) {
                                 IconButton(onClick={
+
                                     isEditDeleteDropDown=false
-                                    viewModel.transaction=viewModel.selectedCard.transaction.get(list.size-1-index)
+                                    viewModel.transaction=viewModel.selectedCard.transaction.get(list.size-1-index).copy()
+                                    viewModel.transactionIndex=list.size-1-index
                                     viewModel.expense=viewModel.transaction.amount.toString()
                                     goToEditSaveScreen()
 

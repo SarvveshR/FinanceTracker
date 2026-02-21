@@ -1,5 +1,7 @@
 package com.example.expensetracker.ViewModel
+import android.content.ContentValues.TAG
 import android.util.Log
+import android.widget.Toast
 import com.example.expensetracker.dataclasses.CardNetwork
 
 import androidx.compose.material.icons.Icons
@@ -15,17 +17,20 @@ import androidx.compose.material.icons.outlined.Analytics
 import androidx.compose.material.icons.outlined.CreditCard
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material3.Tab
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.expensetracker.R
 import com.example.expensetracker.RetrofitInstance
 import com.example.expensetracker.dataclasses.BottomNavigationBar
 import com.example.expensetracker.dataclasses.Card
+import com.example.expensetracker.dataclasses.CardBalanceTransactionDTO
 import com.example.expensetracker.dataclasses.Categories
 import com.example.expensetracker.dataclasses.DataErrorLoading
 import com.example.expensetracker.dataclasses.Transaction
@@ -56,13 +61,15 @@ class ViewModel : ViewModel() {
     //forCards
     var newtworkhash=hashMapOf<CardNetwork, Int >(CardNetwork.Visa to R.drawable.visa,CardNetwork.MasterCard to R.drawable.mastercard, CardNetwork.AmericanExpress to R.drawable.amex)
 
-
+    val toastMessage=mutableStateOf("")
 
 
 
     //transaction adn //list of trans of a card
 
     var transaction by mutableStateOf<Transaction>(Transaction())
+    var transactionIndex by mutableStateOf<Int>(0)
+
 
 
     private val _cards = mutableStateOf<DataErrorLoading>(DataErrorLoading())// read and write
@@ -106,7 +113,7 @@ class ViewModel : ViewModel() {
         "ec_ed" to R.drawable.education,
         "ec_en" to R.drawable.entertainment,
         "ec_tl" to R.drawable.travel,
-        "ec_fk" to R.drawable. family,
+        "ec_fk" to R.drawable.family,
         "ec_mi" to R.drawable.miscellaneous
 
     )
@@ -160,6 +167,7 @@ class ViewModel : ViewModel() {
                 val cardLst=RetrofitInstance.service.getCards()
                 dataErrorLoading=dataErrorLoading.copy(loading = false, cards = cardLst)
                 _cards.value=dataErrorLoading
+
                 Log.d("Successful","card list successfully fetched")
 
             }
@@ -185,6 +193,7 @@ class ViewModel : ViewModel() {
                 if (newTransaction == null) {
                     Log.e("AddTransaction", "Backend returned null transaction")
 
+
                 }
                 var transactionList:List<Transaction> =selectedCard.transaction
                 transactionList= transactionList+newTransaction
@@ -205,6 +214,41 @@ class ViewModel : ViewModel() {
             }
         }
 
+    }
+
+    fun editTransaction(t: Transaction, cId:Int, tId:Int){
+        viewModelScope.launch {
+            var dataErrorLoading= DataErrorLoading()
+
+            try{
+                val cardBalanceTransactionDTO= RetrofitInstance.service.editTransaction(t, cId,tId).body()
+               val  newTransaction= cardBalanceTransactionDTO!!.responseTransactionDTO// edited transaction
+               if(newTransaction==null){
+                   Log.d(TAG, "Backend returned null transaction")
+                   toastMessage.value="No Balance"
+               }
+                else{
+                   val newTransactionList= selectedCard.transaction.toMutableList()
+                   newTransactionList.set(transactionIndex,newTransaction)// new trnasction list
+
+                   val newCard= selectedCard.copy(balance = cardBalanceTransactionDTO.balance, creditsUsed = cardBalanceTransactionDTO.creditsUsed, transaction=newTransactionList)// new cardObject
+
+                   val newCardList= _cards.value.cards.toMutableList()
+                   newCardList.set(selectedCardIndex,newCard)
+                   selectedCard= newCardList.get(selectedCardIndex)
+                   _cards.value= dataErrorLoading.copy(loading = false,cards=newCardList.toList())
+                   toastMessage.value="SuccessFully Edited"
+               }
+
+
+
+            }
+            catch(exception: Exception){
+                _cards.value= dataErrorLoading.copy(error = "Error to Fetch ${exception.message}")
+
+
+            }
+        }
     }
 
 

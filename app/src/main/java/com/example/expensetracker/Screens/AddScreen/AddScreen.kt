@@ -73,49 +73,87 @@ fun addScreen( goToSaveScreen: (isIncome:Boolean,isExpense:Boolean) -> Unit,view
 
             }
             Spacer(modifier = Modifier.padding(10.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                Column(
-                    modifier = Modifier
-                        .size(height = 90.dp, width = 140.dp)
-                        .clip(shape = RoundedCornerShape(10.dp))
-                        .background(DarkPurple.copy(alpha = 0.2f))
-                        .clickable(onClick = {
-                            isIncome    = true
-                            goToSaveScreen(isIncome, isExpense)
-                        }),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
+            if(viewModel.selectedCard.debit){
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    Icon(imageVector = Icons.Filled.AccountBalanceWallet, contentDescription = "Wallet", tint = DarkPurple,modifier=Modifier.size(35.dp))
 
-                    Text("Add Income", fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                    Column(
+                        modifier = Modifier
+                            .size(height = 90.dp, width = 140.dp)
+                            .clip(shape = RoundedCornerShape(10.dp))
+                            .background(DarkPurple.copy(alpha = 0.2f))
+                            .clickable(onClick = {
+                                isIncome    = true
+                                goToSaveScreen(isIncome, isExpense)
+                            }),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(imageVector = Icons.Filled.AccountBalanceWallet, contentDescription = "Wallet", tint = DarkPurple,modifier=Modifier.size(35.dp))
+
+                        Text("Add Income", fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                    }
+
+
+
+                    Column(
+                        modifier = Modifier
+                            .size(height = 90.dp, width = 140.dp)
+                            .clip(shape = RoundedCornerShape(10.dp))
+                            .background(DarkOrange.copy(alpha = 0.4f))
+                            .clickable(onClick = {
+                                isExpense = true
+                                goToSaveScreen(isIncome, isExpense)
+                            }),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally)
+                    {
+                        Icon(imageVector = Icons.Filled.CreditCard,
+                            contentDescription = "wallet",
+                            tint=DarkOrange,
+                            modifier=Modifier.size(35.dp)
+
+                        )
+
+                        Text("Add Expense", fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                    }
                 }
 
-                Column(
-                    modifier = Modifier
-                        .size(height = 90.dp, width = 140.dp)
-                        .clip(shape = RoundedCornerShape(10.dp))
-                        .background(DarkOrange.copy(alpha = 0.4f))
-                        .clickable(onClick = {
-                            isExpense = true
-                            goToSaveScreen(isIncome, isExpense)
-                        }),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Icon(imageVector = Icons.Filled.CreditCard,
-                        contentDescription = "wallet",
-                        tint=DarkOrange,
-                        modifier=Modifier.size(35.dp)
-
-                    )
-
-                    Text("Add Expense", fontSize = 15.sp, fontWeight = FontWeight.Medium)
-                }
             }
+            else if(viewModel.selectedCard.credit){
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+
+
+                    Column(
+                        modifier = Modifier
+                            .size(height = 90.dp, width = 140.dp)
+                            .clip(shape = RoundedCornerShape(10.dp))
+                            .background(DarkOrange.copy(alpha = 0.4f))
+                            .clickable(onClick = {
+                                isExpense = true
+                                goToSaveScreen(isIncome, isExpense)
+                            }),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally)
+                    {
+                        Icon(imageVector = Icons.Filled.CreditCard,
+                            contentDescription = "wallet",
+                            tint=DarkOrange,
+                            modifier=Modifier.size(35.dp)
+
+                        )
+
+                        Text("Add Expense", fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                    }
+                }
+
+            }
+
             Spacer(modifier = Modifier.padding(10.dp))
             Row(
                 modifier = Modifier
