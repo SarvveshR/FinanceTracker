@@ -218,31 +218,39 @@ class ViewModel : ViewModel() {
 
     fun editTransaction(t: Transaction, cId:Int, tId:Int){
         viewModelScope.launch {
-            var dataErrorLoading= DataErrorLoading()
-
-            try{
-                val cardBalanceTransactionDTO= RetrofitInstance.service.editTransaction(t, cId,tId).body()
-               val  newTransaction= cardBalanceTransactionDTO!!.responseTransactionDTO// edited transaction
-               if(newTransaction==null){
-                   Log.d(TAG, "Backend returned null transaction")
-                   toastMessage.value="No Balance"
-               }
-                else{
-                   val newTransactionList= selectedCard.transaction.toMutableList()
-                   newTransactionList.set(transactionIndex,newTransaction)// new trnasction list
-
-                   val newCard= selectedCard.copy(balance = cardBalanceTransactionDTO.balance, creditsUsed = cardBalanceTransactionDTO.creditsUsed, transaction=newTransactionList)// new cardObject
-
-                   val newCardList= _cards.value.cards.toMutableList()
-                   newCardList.set(selectedCardIndex,newCard)
-                   selectedCard= newCardList.get(selectedCardIndex)
-                   _cards.value= dataErrorLoading.copy(loading = false,cards=newCardList.toList())
-                   toastMessage.value="SuccessFully Edited"
-               }
+            var dataErrorLoading = DataErrorLoading()
+            val responseEntity = RetrofitInstance.service.editTransaction(t, cId, tId)
+            try {
 
 
 
-            }
+                val cardBalanceTransactionDTO = responseEntity.body()
+                val newTransaction =
+                    cardBalanceTransactionDTO!!.responseTransactionDTO// edited transaction
+                if (newTransaction == null) {
+                    Log.d(TAG, "Backend returned null transaction")
+                    toastMessage.value = "No Balance"
+                } else {
+                    val newTransactionList = selectedCard.transaction.toMutableList()
+                    newTransactionList.set(transactionIndex, newTransaction)// new trnasction list
+
+                    val newCard = selectedCard.copy(
+                        balance = cardBalanceTransactionDTO.balance,
+                        creditsUsed = cardBalanceTransactionDTO.creditsUsed,
+                        transaction = newTransactionList
+                    )// new cardObject
+
+                    val newCardList = _cards.value.cards.toMutableList()
+                    newCardList.set(selectedCardIndex, newCard)
+                    selectedCard = newCardList.get(selectedCardIndex)
+                    _cards.value =
+                        dataErrorLoading.copy(loading = false, cards = newCardList.toList())
+                    toastMessage.value = "SuccessFully Edited"
+                }
+
+
+
+        }
             catch(exception: Exception){
                 _cards.value= dataErrorLoading.copy(error = "Error to Fetch ${exception.message}")
 

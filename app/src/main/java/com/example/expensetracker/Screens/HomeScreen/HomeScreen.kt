@@ -131,8 +131,8 @@ fun homeScreen(viewModel: ViewModel, goToAddScreen: () -> Unit,goToCardScreen:()
                             Text(if(card.debit){
                                 "₹" +" "+ "${card.balance}"
                             }
-                            else{
-                                "₹ "+ "${card.creditLimit-card.creditsUsed}"
+                            else {
+                                "₹ " + "${card.creditLimit - card.creditsUsed}"
                             }, fontSize = 30.sp, color = Color.White)
                             Image(
                                 painter = painterResource(

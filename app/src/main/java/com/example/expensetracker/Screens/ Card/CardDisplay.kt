@@ -36,6 +36,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -119,7 +120,7 @@ fun cardDisplay(viewModel: ViewModel, dataErrorLoading: DataErrorLoading,goToCar
                 ) {
                     items(cardLst.size) { index ->
                         Box(
-                            modifier=Modifier.fillMaxWidth().height(220.dp).border(width = 2.dp, color = Color.Transparent, shape = RoundedCornerShape(5.dp)).background(
+                            modifier=Modifier.fillMaxWidth().height(220.dp).clip(RoundedCornerShape(10.dp)).background(
                                 if(viewModel.selectedCardIndex==index){
                                     gradient
                                 }
