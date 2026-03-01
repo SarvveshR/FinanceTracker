@@ -1,5 +1,7 @@
 package com.example.expensetracker.Screens.Card
 
+
+import android.widget.Toast
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
@@ -35,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -49,7 +52,7 @@ import com.example.expensetracker.ui.theme.DarkOrange
 import com.example.expensetracker.ui.theme.DarkPurple
 
 @Composable
-fun addCard(viewModel: ViewModel,goToCardsScreen:()->Unit) {
+fun EditDebitCard(viewModel: ViewModel,goToCardsScreen:()->Unit) {
     var isDebit by remember { mutableStateOf(true) }
     var isCredit by remember { mutableStateOf(false) }
     var isKeyPadCardNo by remember { mutableStateOf(false) }
@@ -58,23 +61,23 @@ fun addCard(viewModel: ViewModel,goToCardsScreen:()->Unit) {
     var isKeyPadBalance by remember { mutableStateOf(false) }
     var isKeyPadCreditLimit by remember { mutableStateOf(false) }
     var isKeyPadCreditUsed by remember { mutableStateOf(false) }
-
+    val context= LocalContext.current
 
     var isDropDown by remember { mutableStateOf(false) }
 
-    var cardNo by remember { mutableStateOf("XXXXXXXXXXXXXXXX") }
-    var validFrom by remember { mutableStateOf("XX/XX") }
-    var validThru by remember { mutableStateOf("XX/XX") }
-    var balance by remember { mutableStateOf("") }
-    var creditLimit by remember { mutableStateOf("") }
+    var cardNo by remember { mutableStateOf(viewModel.card.cardNo) }
+    var validFrom by remember { mutableStateOf(viewModel.card.validFrom) }
+    var validThru by remember { mutableStateOf(viewModel.card.validTo) }
+    var balance by remember { mutableStateOf(viewModel.card.balance.toString()) }
+    var creditLimit by remember { mutableStateOf(viewModel.card.creditLimit.toString())}
     var creditused by remember { mutableStateOf("") }
-    var network : CardNetwork by remember { mutableStateOf(CardNetwork.EmptyCard) }
-    var nametextField by remember { mutableStateOf("") }
+    var network : CardNetwork by remember { mutableStateOf(viewModel.card.cardNetwork) }
+    var nametextField by remember { mutableStateOf(viewModel.card.cardHolder) }
 
 
-    var iCN by remember { mutableStateOf(0) }
-    var iVF by remember { mutableStateOf(0) }
-    var iVT by remember { mutableStateOf(0) }
+    var iCN by remember { mutableStateOf(15) }
+    var iVF by remember { mutableStateOf(5) }
+    var iVT by remember { mutableStateOf(5) }
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier.wrapContentSize()
@@ -93,7 +96,7 @@ fun addCard(viewModel: ViewModel,goToCardsScreen:()->Unit) {
                 }
 
                 Text(
-                    "ADD NEW CARD",
+                    "EDIT DEBIT CARD",
                     modifier = Modifier.padding(10.dp),
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
@@ -101,73 +104,7 @@ fun addCard(viewModel: ViewModel,goToCardsScreen:()->Unit) {
 
             }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                Column(modifier = Modifier.wrapContentSize()) {
-                    TextButton(onClick = {
-                        isDebit = true
-                        isCredit = false
-                    }) {
-                        Text(
-                            "DEBIT CARD", fontSize = 20.sp, color = if (isDebit) {
-                                DarkPurple
-                            } else {
-                                Color.Black
-                            }, fontWeight = FontWeight.Medium
-                        )
-                    }
-                    if (isDebit) {
-                        Canvas(modifier = Modifier.width(130.dp)) {
-                            val canvasWidth = size.width
-                            val canvasHeight = size.height
-                            drawLine(
-                                start = Offset(x = 20f, y = 0f),
-                                end = Offset(x = canvasWidth, y = 0f),
-                                color = DarkPurple,
-                                strokeWidth = 10f
 
-                            )
-
-
-                        }
-
-                    }
-
-                }
-                Column() {
-                    TextButton(onClick = {
-                        isCredit = true
-                        isDebit = false
-                    }) {
-                        Text(
-                            "CREDIT CARD", fontSize = 20.sp, color = if (isCredit) {
-                                DarkOrange
-                            } else {
-                                Color.Black
-                            }, fontWeight = FontWeight.Medium
-                        )
-                    }
-                    if (isCredit) {
-                        Canvas(modifier = Modifier.width(150.dp)) {
-                            val canvasWidth = size.width
-                            val canvasHeight = size.height
-                            drawLine(
-                                start = Offset(x = 20f, y = 0f),
-                                end = Offset(x = canvasWidth, y = 0f),
-                                color = DarkOrange,
-                                strokeWidth = 10f
-
-                            )
-
-
-                        }
-
-                    }
-                }
-
-
-            }
 
 
             Spacer(modifier = Modifier.padding(10.dp))
@@ -234,36 +171,7 @@ fun addCard(viewModel: ViewModel,goToCardsScreen:()->Unit) {
                         )
 
 
-                        Box(
-                            modifier = Modifier
 
-                                .height(50.dp)
-
-                                .fillMaxWidth()
-                                .clickable(onClick = {
-                                    isKeyPadValidFrom = false
-                                    isKeyPadCardNo = false
-                                    isKeyPadValidThru = false
-                                    isKeyPadBalance = true
-                                    isKeyPadCreditUsed = false
-                                    isKeyPadCreditLimit = false
-                                })
-                                .border(width = 1.dp, color = Color.LightGray)
-                        ) {
-                            Text(
-                                if (balance.isEmpty()) {
-                                    "Enter Amount"
-                                } else {
-                                    "₹" + balance
-
-                                },
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.align(Alignment.Center)
-                            )
-
-
-                        }
 
 
                     }
@@ -514,350 +422,7 @@ fun addCard(viewModel: ViewModel,goToCardsScreen:()->Unit) {
                 }
 
             }
-            if (isCredit) {
-                Column(
-                    modifier = Modifier
-                        .padding(15.dp)
-                        .fillMaxWidth()
-                ) {
 
-                    Text(
-                        "Card Number",
-                        fontSize = 10.sp,
-                        color = Color.Gray,
-                        modifier = Modifier.padding(10.dp)
-                    )
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable(onClick = {
-                                isKeyPadValidFrom = false
-                                isKeyPadValidThru = false
-                                isKeyPadCardNo = true
-                                isKeyPadBalance = false
-                                isKeyPadCreditUsed = false
-                                isKeyPadCreditLimit = false
-
-
-                            }), horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
-                        for (i in 1..4) {
-
-                            Box(
-                                modifier = Modifier
-                                    .width(70.dp)
-                                    .height(50.dp)
-                                    .border(width = 1.dp, color = Color.LightGray)
-
-                            ) {
-
-                                Text(
-                                    cardNo.substring(4 * i - 4, 4 * i),
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.align(Alignment.Center)
-                                )
-
-                            }
-                        }
-
-
-                    }
-
-
-                    Column(
-                        modifier = Modifier
-                            .padding(15.dp)
-                            .wrapContentSize()
-                    ) {
-                        Text(
-                            "Credit Limit",
-                            fontSize = 10.sp,
-                            color = Color.Gray,
-                            modifier = Modifier.padding(10.dp)
-
-                        )
-
-
-                        Box(
-                            modifier = Modifier
-
-                                .height(50.dp)
-
-                                .fillMaxWidth()
-                                .clickable(onClick = {
-                                    isKeyPadValidFrom = false
-                                    isKeyPadCardNo = false
-                                    isKeyPadValidThru = false
-                                    isKeyPadBalance = false
-                                    isKeyPadCreditUsed = false
-                                    isKeyPadCreditLimit = true
-                                })
-                                .border(width = 1.dp, color = Color.LightGray)
-                        ) {
-                            Text(
-                                if (creditLimit.isEmpty()) {
-                                    "Enter Amount"
-                                } else {
-                                    "₹" + creditLimit
-
-                                },
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.align(Alignment.Center)
-                            )
-
-
-                        }
-
-
-                    }
-
-                    Row(
-                        modifier = Modifier
-                            .padding(10.dp)
-                            .fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-
-                        Column(modifier = Modifier.wrapContentSize()) {
-                            Text(
-                                "Valid From",
-                                fontSize = 10.sp,
-                                color = Color.Gray,
-                                modifier = Modifier.padding(10.dp)
-                            )
-
-
-                            Box(
-                                modifier = Modifier
-                                    .height(50.dp)
-                                    .width(100.dp)
-                                    .clickable(onClick = {
-                                        isKeyPadValidFrom = true
-                                        isKeyPadValidThru = false
-                                        isKeyPadCardNo = false
-                                        isKeyPadBalance = false
-                                        isKeyPadCreditUsed = false
-                                        isKeyPadCreditLimit = false
-
-                                    })
-                                    .border(width = 1.dp, color = Color.LightGray)
-                            ) {
-                                Text(
-                                    validFrom,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.align(Alignment.Center)
-                                )
-
-
-                            }
-
-
-                        }
-                        Column(modifier = Modifier.wrapContentSize()) {
-                            Text(
-                                "Network",
-                                fontSize = 10.sp,
-                                color = Color.Gray,
-                                modifier = Modifier.padding(10.dp)
-                            )
-                            Box(
-                                modifier = Modifier
-                                    .height(50.dp)
-                                    .width(100.dp)
-                                    .clickable(onClick = {
-                                        isDropDown = true
-                                    })
-                                    .border(width = 1.dp, color = Color.LightGray)
-                            ) {
-                                if (network == CardNetwork.EmptyCard) {
-                                    Text(
-
-                                        "Choose",
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.align(Alignment.Center)
-                                    )
-
-                                } else {
-                                    Image(
-                                        painter = painterResource(
-                                            viewModel.newtworkhash.get(network)!!
-                                        ),
-                                        contentDescription = "$network",
-                                        modifier = Modifier
-                                            .size(
-                                                if (network.equals(CardNetwork.AmericanExpress)) {
-                                                    80.dp
-                                                } else {
-                                                    40.dp
-                                                }
-                                            )
-                                            .align(Alignment.Center)
-
-                                    )
-                                }
-
-
-                            }
-
-                            DropdownMenu(
-                                expanded = isDropDown, onDismissRequest = { isDropDown = false }) {
-                                DropdownMenuItem(onClick = {
-                                    isDropDown = false
-                                    network = CardNetwork.Visa
-                                }, text = {
-                                    Row(
-                                        modifier = Modifier.fillMaxSize(),
-                                        horizontalArrangement = Arrangement.Center,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Image(
-                                            painter = painterResource(id = R.drawable.visa),
-                                            contentDescription = "visa",
-                                            modifier = Modifier.size(40.dp)
-                                        )
-                                    }
-
-
-                                })
-                                DropdownMenuItem(onClick = {
-                                    isDropDown = false
-                                    network = CardNetwork.MasterCard
-                                }, text = {
-                                    Row(
-                                        modifier = Modifier.fillMaxSize(),
-                                        horizontalArrangement = Arrangement.Center,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Image(
-                                            painter = painterResource(id = R.drawable.mastercard),
-                                            contentDescription = "MasterCard",
-                                            modifier = Modifier.size(40.dp)
-                                        )
-                                    }
-
-
-                                }
-
-
-                                )
-                                DropdownMenuItem(onClick = {
-                                    isDropDown = false
-                                    network = CardNetwork.AmericanExpress
-                                }, text = {
-                                    Row(
-                                        modifier = Modifier.fillMaxSize(),
-                                        horizontalArrangement = Arrangement.Center,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Image(
-                                            painter = painterResource(id = R.drawable.amex),
-                                            contentDescription = "Amex",
-                                            modifier = Modifier.size(80.dp)
-                                        )
-
-                                    }
-
-
-                                }
-
-                                )
-
-
-                            }
-
-
-                        }
-
-
-
-                        Column(modifier = Modifier.wrapContentSize()) {
-                            Text(
-                                "Valid Thru",
-                                fontSize = 10.sp,
-                                color = Color.Gray,
-                                modifier = Modifier.padding(10.dp)
-
-                            )
-
-
-                            Box(
-                                modifier = Modifier
-                                    .height(50.dp)
-                                    .width(100.dp)
-                                    .clickable(onClick = {
-                                        isKeyPadValidFrom = false
-                                        isKeyPadCardNo = false
-                                        isKeyPadValidThru = true
-                                    })
-                                    .border(width = 1.dp, color = Color.LightGray)
-                            ) {
-                                Text(
-                                    validThru,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.align(Alignment.Center)
-                                )
-
-
-                            }
-
-
-                        }
-
-
-                    }
-                    Column(
-                        modifier = Modifier
-                            .padding(15.dp)
-                            .wrapContentSize()
-                    ) {
-                        Text(
-                            "Card Holder",
-                            fontSize = 10.sp,
-                            color = Color.Gray,
-                            modifier = Modifier.padding(10.dp)
-
-                        )
-
-
-                        Box(
-                            modifier = Modifier
-                                .height(50.dp)
-                                .fillMaxWidth()
-                                .border(width = 1.dp, color = Color.LightGray)
-                        ) {
-                            TextField(
-                                value = nametextField,
-                                onValueChange = { nametextField = it },
-                                modifier = Modifier.align(Alignment.Center),
-
-                                textStyle = TextStyle(
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold,
-                                ),
-                                placeholder = {
-                                    Text(
-                                        "Enter Name", fontSize = 12.sp, fontWeight = FontWeight.Bold
-                                    )
-                                }
-
-
-                            )
-
-                        }
-
-
-                    }
-
-
-                }
-
-            }
 
 
         }
@@ -889,8 +454,7 @@ fun addCard(viewModel: ViewModel,goToCardsScreen:()->Unit) {
             } else if (isKeyPadValidFrom) {
                 Box(modifier = Modifier.align(Alignment.BottomCenter)) {
                     keyPad(
-                        190
-                        , viewModel, if (isDebit) {
+                        190, viewModel, if (isDebit) {
                             true
                         } else {
                             false
@@ -923,7 +487,7 @@ fun addCard(viewModel: ViewModel,goToCardsScreen:()->Unit) {
             } else if (isKeyPadValidThru) {
                 Box(modifier = Modifier.align(Alignment.BottomCenter)) {
                     keyPad(
-                        190,
+                      190,
                         viewModel, if (isDebit) {
                             true
                         } else {
@@ -1025,16 +589,20 @@ fun addCard(viewModel: ViewModel,goToCardsScreen:()->Unit) {
                         cardNo = cardNo,
                         validFrom = validFrom,
                         validTo = validThru,
-                        balance = balance.toLong(),
-                        credit = false,
-                        debit = true,
                         cardHolder = nametextField
 
                     )
-                    viewModel.addCard(viewModel.card)
+                    if(viewModel.card==viewModel.selectedCard){
+                        Toast.makeText(context,"Change something",Toast.LENGTH_SHORT).show()
+                    }
+                    else{
 
-                    viewModel.card = Card()
-                    goToCardsScreen()
+                        viewModel.editCard(viewModel.card, viewModel.selectedCard.cardId!!)
+
+                        viewModel.card = Card()
+                        goToCardsScreen()
+
+                    }
 
                 }, modifier = Modifier
                     .size(50.dp)
@@ -1047,38 +615,7 @@ fun addCard(viewModel: ViewModel,goToCardsScreen:()->Unit) {
 
             }
         }
-        else if (isCredit && !cardNo.isEmpty() && !validFrom.isEmpty() && !validThru.isEmpty() && !creditLimit.isEmpty()  && !nametextField.isEmpty() && isKeyPadValidThru == false && isKeyPadCardNo == false && isKeyPadBalance == false && isKeyPadCreditUsed == false && isKeyPadCreditLimit == false) {
-            IconButton(
 
-                onClick = {
-                    viewModel.card= viewModel.card.copy(
-                        cardNetwork = network,
-                        cardNo = cardNo,
-                        validFrom = validFrom,
-                        validTo = validThru,
-                        credit = true,
-                        debit = false,
-                        creditLimit = creditLimit.toLong(),
-                        cardHolder = nametextField
-
-                    )
-
-                    viewModel.addCard(viewModel.card) // sending to backend
-                    viewModel.card = Card()
-
-                    goToCardsScreen()
-
-                }, modifier = Modifier
-                    .size(50.dp)
-                    .align(Alignment.BottomEnd)
-
-            ) {
-                Icon(
-                    Icons.Default.Done, contentDescription = "Done", modifier = Modifier.size(40.dp)
-                )
-
-            }
-        }
 
 
     }

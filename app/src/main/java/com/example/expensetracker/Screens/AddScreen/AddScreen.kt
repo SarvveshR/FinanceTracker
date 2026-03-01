@@ -1,5 +1,6 @@
 package com.example.expensetracker.Screens.AddScreen
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -33,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -47,7 +49,7 @@ fun addScreen( goToSaveScreen: (isIncome:Boolean,isExpense:Boolean) -> Unit,view
     var list=viewModel.selectedCard.transaction?:emptyList()
     var isExpense by remember { mutableStateOf(false) }
     var isIncome by remember { mutableStateOf(false) }
-
+    val context= LocalContext.current
     Box(
         modifier = Modifier
             .fillMaxSize())
@@ -85,8 +87,12 @@ fun addScreen( goToSaveScreen: (isIncome:Boolean,isExpense:Boolean) -> Unit,view
                             .clip(shape = RoundedCornerShape(10.dp))
                             .background(DarkPurple.copy(alpha = 0.2f))
                             .clickable(onClick = {
-                                isIncome    = true
-                                goToSaveScreen(isIncome, isExpense)
+
+
+                                    isIncome    = true
+                                    goToSaveScreen(isIncome, isExpense)
+
+
                             }),
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally
@@ -137,6 +143,70 @@ fun addScreen( goToSaveScreen: (isIncome:Boolean,isExpense:Boolean) -> Unit,view
                             .clickable(onClick = {
                                 isExpense = true
                                 goToSaveScreen(isIncome, isExpense)
+                            }),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally)
+                    {
+                        Icon(imageVector = Icons.Filled.CreditCard,
+                            contentDescription = "wallet",
+                            tint=DarkOrange,
+                            modifier=Modifier.size(35.dp)
+
+                        )
+
+                        Text("Add Expense", fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                    }
+                }
+
+
+            }
+            else{
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+
+                    Column(
+                        modifier = Modifier
+                            .size(height = 90.dp, width = 140.dp)
+                            .clip(shape = RoundedCornerShape(10.dp))
+                            .background(DarkPurple.copy(alpha = 0.2f))
+                            .clickable(onClick = {
+                                if(viewModel.selectedCard.cardId==null){
+                                    Toast.makeText(context,"Select a card",Toast.LENGTH_SHORT).show()
+                                }
+                                else {
+
+
+                                    isIncome = true
+                                    goToSaveScreen(isIncome, isExpense)
+                                }
+                            }),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(imageVector = Icons.Filled.AccountBalanceWallet, contentDescription = "Wallet", tint = DarkPurple,modifier=Modifier.size(35.dp))
+
+                        Text("Add Income", fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                    }
+
+
+
+                    Column(
+                        modifier = Modifier
+                            .size(height = 90.dp, width = 140.dp)
+                            .clip(shape = RoundedCornerShape(10.dp))
+                            .background(DarkOrange.copy(alpha = 0.4f))
+                            .clickable(onClick = {
+                                if(viewModel.selectedCard.cardId==null){
+                                    Toast.makeText(context,"Select a card",Toast.LENGTH_SHORT).show()
+                                }
+                                else {
+
+
+                                    isExpense = true
+                                    goToSaveScreen(isIncome, isExpense)
+                                }
                             }),
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally)

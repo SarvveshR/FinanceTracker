@@ -1,6 +1,7 @@
 package com.example.expensetracker.Screens.Card
 
 import android.graphics.Paint
+import android.widget.Toast
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -22,10 +23,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -41,6 +45,8 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -52,7 +58,7 @@ import com.example.expensetracker.dataclasses.Card
 import com.example.expensetracker.dataclasses.DataErrorLoading
 
 @Composable
-fun cardDisplay(viewModel: ViewModel, dataErrorLoading: DataErrorLoading,goToCardsScreen: () -> Unit, goToAddCardsScreen: () -> Unit) {
+fun cardDisplay(viewModel: ViewModel, dataErrorLoading: DataErrorLoading,goToEditCreditCardScreen:()->Unit,goToEditDebitCardScreen:()->Unit,goToCardsScreen: () -> Unit, goToAddCardsScreen: () -> Unit) {
 
 
    val gradient= Brush.sweepGradient(
@@ -66,6 +72,8 @@ fun cardDisplay(viewModel: ViewModel, dataErrorLoading: DataErrorLoading,goToCar
        ),
 
    )
+
+    val context=LocalContext.current
 
 
 
@@ -216,42 +224,98 @@ fun cardDisplay(viewModel: ViewModel, dataErrorLoading: DataErrorLoading,goToCar
 
                                             }
                                         }
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(0.7f),
-                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                        Row(modifier=Modifier.fillMaxWidth()) {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(0.7f),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
 
-                                            ) {
-                                            Column(modifier = Modifier.fillMaxHeight()) {
-                                                Text(
-                                                    "Card Holder",
-                                                    fontSize = 7.sp,
-                                                    color = Color.White
-                                                )
-                                                Text(
-                                                    cardLst.get(index).cardHolder,
-                                                    fontSize = 10.sp,
-                                                    color = Color.White
-                                                )
+                                                ) {
+                                                Column(modifier = Modifier.fillMaxHeight()) {
+                                                    Text(
+                                                        "Card Holder",
+                                                        fontSize = 7.sp,
+                                                        color = Color.White
+                                                    )
+                                                    Text(
+                                                        cardLst.get(index).cardHolder,
+                                                        fontSize = 10.sp,
+                                                        color = Color.White
+                                                    )
+                                                }
+                                                Column(modifier = Modifier.fillMaxHeight()) {
+                                                    Text("Valid From", fontSize = 7.sp, color = Color.White)
+                                                    Text(
+                                                        cardLst.get(index).validFrom,
+                                                        fontSize = 10.sp,
+                                                        color = Color.White
+                                                    )
+                                                }
+                                                Column(modifier = Modifier.fillMaxHeight()) {
+                                                    Text("Valid To", fontSize = 7.sp, color = Color.White)
+                                                    Text(
+                                                        cardLst.get(index).validTo,
+                                                        fontSize = 10.sp,
+                                                        color = Color.White
+                                                    )
+                                                }
+
+
+
                                             }
-                                            Column(modifier = Modifier.fillMaxHeight()) {
-                                                Text("Valid From", fontSize = 7.sp, color = Color.White)
-                                                Text(
-                                                    cardLst.get(index).validFrom,
-                                                    fontSize = 10.sp,
-                                                    color = Color.White
-                                                )
+
+                                            if(viewModel.selectedCardIndex==index) {
+
+
+                                                Row(
+                                                    modifier = Modifier.fillMaxSize(),
+                                                    horizontalArrangement = Arrangement.End,
+                                                    verticalAlignment = Alignment.Bottom
+                                                ) {
+                                                    IconButton(
+                                                        modifier = Modifier.size(20.dp),
+
+                                                        onClick = {
+                                                            viewModel.card =
+                                                                viewModel.selectedCard.copy()
+                                                            if (viewModel.card.debit) {
+                                                                goToEditDebitCardScreen()
+                                                            } else {
+                                                                goToEditCreditCardScreen()
+                                                            }
+
+
+                                                        }
+                                                    ) {
+                                                        Icon(
+                                                            imageVector = Icons.Default.Edit,
+                                                            contentDescription = "Edit"
+                                                        )
+
+
+                                                    }
+                                                    IconButton(
+                                                        modifier = Modifier.size(20.dp),
+                                                        onClick = {
+                                                            viewModel.deleteCard(viewModel.selectedCard.cardId!!)
+                                                        }
+                                                    ) {
+                                                        Icon(
+                                                            imageVector = Icons.Default.Delete,
+                                                            contentDescription = "Delete"
+                                                        )
+
+
+                                                    }
+
+                                                }
                                             }
-                                            Column(modifier = Modifier.fillMaxHeight()) {
-                                                Text("Valid To", fontSize = 7.sp, color = Color.White)
-                                                Text(
-                                                    cardLst.get(index).validTo,
-                                                    fontSize = 10.sp,
-                                                    color = Color.White
-                                                )
-                                            }
+
+
+
 
 
                                         }
+
 
 
                                     }

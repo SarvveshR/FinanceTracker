@@ -22,6 +22,8 @@ import com.example.expensetracker.Screens.Card.addCard
 import com.example.expensetracker.Screens.Card.cardDisplay
 import com.example.expensetracker.Screens.AddScreen.addScreen
 import com.example.expensetracker.Screens.AnalyticsScreen.Analytics
+import com.example.expensetracker.Screens.Card.EditDebitCard
+import com.example.expensetracker.Screens.Card.editCreditCard
 import com.example.expensetracker.Screens.HomeScreen.homeScreen
 import com.example.expensetracker.Screens.SettingScreen.Settings
 import com.example.expensetracker.Screens.saveScreen.EditSaveScreen
@@ -118,6 +120,12 @@ fun navigation() {
                         viewModel,
                         dataErrorLoading = dataErrorLoading,
                         goToCardsScreen = { navController.navigate(AddCardsScreen) },
+                        goToEditCreditCardScreen = {
+                            navController.navigate(EditCreditCardScreen)
+                        },
+                        goToEditDebitCardScreen = {
+                            navController.navigate(EditDebitCardScreen)
+                        },
                         goToAddCardsScreen = {
                             navController.navigate(
                                 AddCardsScreen
@@ -218,6 +226,17 @@ fun navigation() {
                     addCard(viewModel, goToCardsScreen = { navController.navigate(CardsScreen) })
                 }
 
+                composable<EditCreditCardScreen>{
+
+                    editCreditCard(viewModel,goToCardsScreen={navController.navigate(CardsScreen)})
+                }
+
+                composable< EditDebitCardScreen>{
+
+                    EditDebitCard(viewModel,goToCardsScreen={navController.navigate(CardsScreen)})
+                }
+
+
 
             }
         }
@@ -255,6 +274,11 @@ data class IncomeExpenseCategoryScreen(var isIncome: Boolean, var isExpense: Boo
 
 @Serializable
 data object AddCardsScreen
+@Serializable
+data object EditCreditCardScreen
+
+@Serializable
+data object EditDebitCardScreen
 
 
 @Serializable

@@ -57,7 +57,6 @@ class ViewModel : ViewModel() {
     var isKeyPad by mutableStateOf(false)
     var expense by mutableStateOf("")
 
-
     //forCards
     var newtworkhash=hashMapOf<CardNetwork, Int >(CardNetwork.Visa to R.drawable.visa,CardNetwork.MasterCard to R.drawable.mastercard, CardNetwork.AmericanExpress to R.drawable.amex)
 
@@ -185,7 +184,7 @@ class ViewModel : ViewModel() {
 
     fun addTransaction( transaction:Transaction,cardId:Int){
         viewModelScope.launch {
-            var dataErrorLoading= DataErrorLoading()
+            val dataErrorLoading= DataErrorLoading()
 
             try{
                 val newCardBalanceTransactionDTO= RetrofitInstance.service.addTransaction(cardId,transaction)
@@ -218,10 +217,10 @@ class ViewModel : ViewModel() {
 
     fun editTransaction(t: Transaction, cId:Int, tId:Int){
         viewModelScope.launch {
-            var dataErrorLoading = DataErrorLoading()
-            val responseEntity = RetrofitInstance.service.editTransaction(t, cId, tId)
+            val dataErrorLoading = DataErrorLoading()
             try {
 
+                val responseEntity = RetrofitInstance.service.editTransaction(t, cId, tId)
 
 
                 val cardBalanceTransactionDTO = responseEntity.body()
@@ -257,6 +256,107 @@ class ViewModel : ViewModel() {
 
             }
         }
+    }
+    fun deleteTransaction( cId:Int, tId:Int){
+        viewModelScope.launch {
+            val dataErrorLoading = DataErrorLoading()
+            try {
+                val responseEntity = RetrofitInstance.service.deleteTransaction( cId, tId)
+
+
+
+
+                val cardBalanceTransactionDTO = responseEntity.body()!!
+                if(cardBalanceTransactionDTO.responseTransactionDTO==null){
+                    val newTransactionList = selectedCard.transaction.toMutableList()
+                    newTransactionList.removeAt(transactionIndex)// new trnasction list
+
+                    val newCard = selectedCard.copy(
+                        balance = cardBalanceTransactionDTO.balance,
+                        creditsUsed = cardBalanceTransactionDTO.creditsUsed,
+                        transaction = newTransactionList
+                    )// new cardObject
+
+                    val newCardList = _cards.value.cards.toMutableList()
+                    newCardList.set(selectedCardIndex, newCard)
+                    selectedCard = newCardList.get(selectedCardIndex)
+                    _cards.value =
+                        dataErrorLoading.copy(loading = false, cards = newCardList.toList())
+                    toastMessage.value = "SuccessFully Deleted"
+
+                }
+
+
+
+
+            }
+            catch(exception: Exception){
+                _cards.value= dataErrorLoading.copy(error = "Error to Fetch ${exception.message}")
+
+
+            }
+        }
+    }
+
+
+    fun editCard(card:Card, cardId:Int){
+        viewModelScope.launch {
+            val dataErrorLoading= DataErrorLoading()
+
+            try{
+                val responseCardDTO= RetrofitInstance.service.editCard(card,cardId)
+                var newCard= responseCardDTO
+                newCard= newCard.copy(transaction=selectedCard.transaction)
+                val newCardList= _cards.value.cards.toMutableList()
+                newCardList.set(selectedCardIndex,newCard)
+                _cards.value= dataErrorLoading.copy(loading = false, cards=newCardList.toList())
+                selectedCard= _cards.value.cards.get(selectedCardIndex)
+                Log.d("TAG","Edited and Fetched")
+
+
+            }
+            catch (e: Exception){
+                Log.e("unsuccessful","Failed to Edit",e)
+
+            }
+
+
+
+        }
+
+    }
+    fun deleteCard( cardId:Int){
+        viewModelScope.launch {
+            val dataErrorLoading= DataErrorLoading()
+
+            try{
+                val delete= RetrofitInstance.service.deleteCard(cardId)
+                if(delete){
+                    val newCardList= _cards.value.cards.toMutableList()
+                    newCardList.removeAt(selectedCardIndex)
+
+                    _cards.value= dataErrorLoading.copy(loading = false, cards=newCardList.toList())
+                    selectedCard=Card()
+                    selectedCardIndex=-1
+                    Log.d(TAG,"Deleted ")
+
+                }
+                else{
+                    Log.d(TAG,"Not Deleled ")
+
+                }
+
+
+            }
+            catch (e: Exception){
+                Log.e("unsuccessful","Failed to Edit",e)
+
+            }
+
+
+
+        }
+
     }
 
 

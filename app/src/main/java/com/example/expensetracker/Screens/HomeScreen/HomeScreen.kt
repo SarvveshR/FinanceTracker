@@ -49,6 +49,7 @@ import com.example.expensetracker.dataclasses.CardNetwork
 
 import com.example.expensetracker.R
 import com.example.expensetracker.ViewModel.ViewModel
+import com.example.expensetracker.dataclasses.Transaction
 import com.example.expensetracker.ui.theme.DarkGreen
 
 @Composable
@@ -319,7 +320,8 @@ fun homeScreen(viewModel: ViewModel, goToAddScreen: () -> Unit,goToCardScreen:()
                         }
 
 
-                            DropdownMenu(expanded=isEditDeleteDropDown, onDismissRequest = {isEditDeleteDropDown=false}) {
+                            DropdownMenu(expanded=isEditDeleteDropDown, onDismissRequest = {isEditDeleteDropDown=false}, modifier = Modifier.align(
+                                Alignment.Center)) {
                                 IconButton(onClick={
 
                                     isEditDeleteDropDown=false
@@ -335,10 +337,14 @@ fun homeScreen(viewModel: ViewModel, goToAddScreen: () -> Unit,goToCardScreen:()
                                 }
                                 IconButton(onClick={
                                     isEditDeleteDropDown=false
-                                    goToEditSaveScreen()
+                                    viewModel.transaction=viewModel.selectedCard.transaction.get(list.size-1-index).copy()
+                                    viewModel.deleteTransaction(viewModel.selectedCard.cardId!!, viewModel.transaction.id!!)
+                                    viewModel.transaction= Transaction()
+                                    viewModel.transactionIndex=list.size-1-index
+
 
                                 }){
-                                    Icon(imageVector = Icons.Default.Delete, contentDescription = "Edit")
+                                    Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete")
 
                                 }
 
