@@ -16,5 +16,13 @@ val LightOrange = Color(0xFFF1815D)
 val DarkPurple = Color(0xFF7B3FE4)
 val DarkOrange = Color(0xFFF28C34)
 val veryLightGray = Color(0xFFE7E7E7)
+val IncomeColor = Color(0xFF6C3CF4)
 
+val ExpenseColor = Color(0xFFFF7A45)
+
+val CardBackground = Color.White
+
+val ScreenBackground = Color(0xFFF7F8FC)
+
+val SecondaryText = Color(0xFF8B8B8B)
 

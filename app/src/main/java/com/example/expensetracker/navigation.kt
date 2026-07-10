@@ -21,11 +21,11 @@ import androidx.navigation.toRoute
 import com.example.expensetracker.Screens.Card.addCard
 import com.example.expensetracker.Screens.Card.cardDisplay
 import com.example.expensetracker.Screens.AddScreen.addScreen
-import com.example.expensetracker.Screens.AnalyticsScreen.Analytics
 import com.example.expensetracker.Screens.Card.EditDebitCard
 import com.example.expensetracker.Screens.Card.editCreditCard
 import com.example.expensetracker.Screens.HomeScreen.homeScreen
 import com.example.expensetracker.Screens.SettingScreen.Settings
+import com.example.expensetracker.Screens.analytics.AnalyticsScreen
 import com.example.expensetracker.Screens.saveScreen.EditSaveScreen
 import com.example.expensetracker.Screens.saveScreen.income_or_expense_Categories
 import com.example.expensetracker.Screens.saveScreen.saveScreen
@@ -152,7 +152,7 @@ fun navigation() {
 
 
                 composable<Analytics> {
-                    Analytics()
+                    AnalyticsScreen(vm=viewModel)
                 }
                 composable<Settings> {
                     Settings()
