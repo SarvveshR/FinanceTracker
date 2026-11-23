@@ -1,9 +1,10 @@
 package com.example.expensetracker
 
+import com.example.expensetracker.auth.AuthResponse
+import com.example.expensetracker.auth.GoogleAuthRequest
 import com.example.expensetracker.dataclasses.Card
 import com.example.expensetracker.dataclasses.CardBalanceTransactionDTO
 import com.example.expensetracker.dataclasses.Transaction
-import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -15,6 +16,10 @@ interface ApiService {
 
     @GET("/status")
    suspend fun getStatus(): String
+
+   //auth
+   @POST("/auth/google")
+   suspend fun googleLogin(@Body request: GoogleAuthRequest): AuthResponse
 
 
    @POST("/card/add")
@@ -28,11 +33,12 @@ interface ApiService {
    @POST("/transaction/add/{cardId}")
    suspend fun addTransaction(@Path("cardId",) cardId:Int, @Body transaction: Transaction): CardBalanceTransactionDTO
 
+   // Plain return types (not Response<>) so a 4xx/5xx throws HttpException like every other call
    @PUT("/transaction/edit/{cardId}/{transactionId}")
-   suspend fun editTransaction(@Body transaction: Transaction,@Path("cardId") cardId:Int, @Path("transactionId") transactionId:Int): Response<CardBalanceTransactionDTO>
+   suspend fun editTransaction(@Body transaction: Transaction,@Path("cardId") cardId:Int, @Path("transactionId") transactionId:Int): CardBalanceTransactionDTO
 
    @DELETE("/transaction/delete/{cardId}/{transactionId}")
-   suspend fun deleteTransaction(@Path("cardId") cardId:Int, @Path("transactionId") transactionId:Int): Response<CardBalanceTransactionDTO>
+   suspend fun deleteTransaction(@Path("cardId") cardId:Int, @Path("transactionId") transactionId:Int): CardBalanceTransactionDTO
 
 
    //card

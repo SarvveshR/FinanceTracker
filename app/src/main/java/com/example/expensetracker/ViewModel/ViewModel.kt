@@ -1,66 +1,42 @@
 package com.example.expensetracker.ViewModel
-import android.content.ContentValues.TAG
 import android.util.Log
-import android.widget.Toast
 import com.example.expensetracker.dataclasses.CardNetwork
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddCircle
-import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.Backspace
-import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Done
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.outlined.AddCircle
-import androidx.compose.material.icons.outlined.Analytics
-import androidx.compose.material.icons.outlined.CreditCard
-import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material3.Tab
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.expensetracker.R
 import com.example.expensetracker.RetrofitInstance
-import com.example.expensetracker.dataclasses.BottomNavigationBar
 import com.example.expensetracker.dataclasses.Card
-import com.example.expensetracker.dataclasses.CardBalanceTransactionDTO
 import com.example.expensetracker.dataclasses.Categories
 import com.example.expensetracker.dataclasses.DataErrorLoading
 import com.example.expensetracker.dataclasses.Transaction
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import com.example.expensetracker.network.toUserMessage
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 class ViewModel : ViewModel() {
 
-    //Bottom navigation Bar
-    var status  by mutableStateOf("")
-    val navBarItems= listOf<BottomNavigationBar>(
-        BottomNavigationBar(title = "Home", selectedIcon = Icons.Filled.Home, unSelectedIcon = Icons.Outlined.Home),
-        BottomNavigationBar(title = "Cards", selectedIcon = Icons.Filled.CreditCard, unSelectedIcon = Icons.Outlined.CreditCard),
-        BottomNavigationBar(title = "Add ", selectedIcon = Icons.Filled.AddCircle, unSelectedIcon = Icons.Outlined.AddCircle),
-        BottomNavigationBar(title = "Analytics", selectedIcon = Icons.Filled.Analytics, unSelectedIcon = Icons.Outlined.Analytics),
-        BottomNavigationBar(title = "Settings", selectedIcon = Icons.Filled.Settings, unSelectedIcon = Icons.Outlined.Settings)
-
-    )
-    var selectedIndex by mutableStateOf(0)
-    //keypad in SaveScreen
-    val keyPadLst =
-        listOf<Any>(1, 2, 3, 4, 5, 6, 7, 8, 9, Icons.Default.Backspace, 0, Icons.Filled.Done)
-    var isKeyPad by mutableStateOf(false)
     var expense by mutableStateOf("")
 
     //forCards
     var newtworkhash=hashMapOf<CardNetwork, Int >(CardNetwork.Visa to R.drawable.visa,CardNetwork.MasterCard to R.drawable.mastercard, CardNetwork.AmericanExpress to R.drawable.amex)
 
-    val toastMessage=mutableStateOf("")
+    // Success and error messages for the snackbar in navigation.kt. It lives above every screen,
+    // so a message still shows after the screen that triggered it has navigated away.
+    private val _messages = MutableSharedFlow<String>(extraBufferCapacity = 5)
+    val messages: SharedFlow<String> = _messages
 
 
 
@@ -76,14 +52,6 @@ class ViewModel : ViewModel() {
     init{
         getCards()
     }
-
-
-
-
-
-
-
-
 
 
 
@@ -144,224 +112,252 @@ class ViewModel : ViewModel() {
         Categories("ic_oi", "Other Income"),
     )
 
-    fun getStatus(){
-        viewModelScope.launch{
-           status=RetrofitInstance.service.getStatus()
+    fun showMessage(message: String) {
+        _messages.tryEmit(message)
+    }
 
+    // Makes this card the one Home, Add and Save work with
+    fun selectCard(index: Int) {
+        val cardList = _cards.value.cards
+        if (index in cardList.indices) {
+            selectedCardIndex = index
+            selectedCard = cardList[index]
+        } else {
+            selectedCardIndex = -1
+            selectedCard = Card()
         }
     }
 
-    fun addCard(card: Card){
+    // After the card list changes: keep the same card selected if it still exists, otherwise the first one
+    private fun reselectCard() {
+        val cardList = _cards.value.cards
+        val previousId = selectedCard.cardId
+        val index = cardList.indexOfFirst { it.cardId != null && it.cardId == previousId }
+        selectCard(if (index >= 0) index else 0)
+    }
+
+    // Fresh draft for the Save screen: today's date, current time, keypad open
+    fun startNewTransaction(isIncome: Boolean, isExpense: Boolean) {
+        val now = LocalDateTime.now()
+        transaction = Transaction(
+            date = now.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")),
+            time = now.format(DateTimeFormatter.ofPattern("hh:mm a")),
+            income = isIncome,
+            expense = isExpense
+        )
+        expense = ""
+    }
+
+    // Copies an existing transaction into the draft for the Edit screen
+    fun startEditTransaction(index: Int) {
+        transaction = selectedCard.transaction[index].copy()
+        transactionIndex = index
+        expense = transaction.amount.toString()
+    }
+
+    // Keypad input: the amount is kept in sync on every key press, so there's no separate "confirm" step
+    fun appendAmountDigit(digit: Int) {
+        if (expense.length >= MAX_AMOUNT_DIGITS) return
+        if (expense.isEmpty() && digit == 0) return // no leading zeros
+        expense += digit
+        transaction = transaction.copy(amount = expense.toInt())
+    }
+
+    fun clearAmount() {
+        expense = ""
+        transaction = transaction.copy(amount = 0)
+    }
+
+    // Expense ↔ Income toggle. Categories differ per type, so switching clears the chosen one.
+    fun setTransactionType(isIncome: Boolean) {
+        if (transaction.income == isIncome && transaction.expense == !isIncome) return
+        transaction = transaction.copy(
+            income = isIncome,
+            expense = !isIncome,
+            type = Categories("", "")
+        )
+    }
+
+    fun removeAmountDigit() {
+        expense = expense.dropLast(1)
+        transaction = transaction.copy(amount = expense.toIntOrNull() ?: 0)
+    }
+
+    // Checks the draft before it's sent. Returns an error message, or null if it's fine.
+    private fun draftError(): String? {
+        val t = transaction
+        val card = selectedCard
+        return when {
+            card.cardId == null -> "Select a card first"
+            t.amount <= 0 -> "Enter an amount"
+            t.type.id.isBlank() -> "Choose a category"
+            card.credit && t.expense && card.creditsUsed + t.amount > card.creditLimit -> "This would go over the card's credit limit"
+            card.credit && t.income && t.amount > card.creditsUsed -> "Payment is more than the amount used on this card"
+            card.debit && t.expense && t.amount > card.balance -> "Not enough balance on this card"
+            else -> null
+        }
+    }
+
+    // Save screen: validates, sends, and clears the draft. Returns false (and shows why) if it couldn't be saved.
+    fun saveNewTransaction(): Boolean {
+        draftError()?.let { showMessage(it); return false }
+        addTransaction(transaction, selectedCard.cardId!!)
+        transaction = Transaction()
+        expense = ""
+        return true
+    }
+
+    // Edit screen: same checks (balance rules are left to the server, since the old amount is already counted)
+    fun saveEditedTransaction(): Boolean {
+        val t = transaction
+        when {
+            t.amount <= 0 -> { showMessage("Enter an amount"); return false }
+            t.type.id.isBlank() -> { showMessage("Choose a category"); return false }
+            selectedCard.transaction.getOrNull(transactionIndex) == t -> { showMessage("Nothing changed"); return false }
+        }
+        editTransaction(t, selectedCard.cardId!!, t.id!!)
+        transaction = Transaction()
+        expense = ""
+        return true
+    }
+
+    // Runs an API call. Any failure is logged and shown in the snackbar; the data on screen is left as it was.
+    private fun launchApi(action: String, block: suspend () -> Unit) {
         viewModelScope.launch {
-            RetrofitInstance.service.addCard(card)
-            getCards()
+            try {
+                block()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.e(TAG, "$action failed", e)
+                showMessage(e.toUserMessage())
+            }
+        }
+    }
+
+    // Puts an updated copy of the selected card back into the list
+    private fun replaceSelectedCard(newCard: Card) {
+        val newCardList = _cards.value.cards.toMutableList()
+        newCardList[selectedCardIndex] = newCard
+        _cards.value = _cards.value.copy(loading = false, error = null, cards = newCardList)
+        selectedCard = newCard
+    }
+
+    // True while a card is being sent; the card form shows a spinner and ignores extra taps
+    var isSavingCard by mutableStateOf(false)
+        private set
+
+    // Adds (editingId = null) or updates a card. Waits for the server, so if it's rejected the form stays open
+    // with everything still filled in, and onSaved only runs on success.
+    fun saveCard(card: Card, editingId: Int?, onSaved: () -> Unit) {
+        if (isSavingCard) return
+        isSavingCard = true
+        viewModelScope.launch {
+            try {
+                if (editingId == null) {
+                    RetrofitInstance.service.addCard(card)
+                    showMessage("Card added")
+                    getCards()
+                } else {
+                    val editedCard = RetrofitInstance.service.editCard(card, editingId)
+                    replaceSelectedCard(editedCard.copy(transaction = selectedCard.transaction))
+                    showMessage("Card updated")
+                }
+                onSaved()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.e(TAG, "Save card failed", e)
+                showMessage(e.toUserMessage())
+            } finally {
+                isSavingCard = false
+            }
         }
     }
 
     fun getCards(){
         viewModelScope.launch {
-            var dataErrorLoading= DataErrorLoading()
-
+            // Full-screen spinner only on the first load; a refresh keeps the current cards visible
+            if (_cards.value.cards.isEmpty()) {
+                _cards.value = _cards.value.copy(loading = true, error = null)
+            }
             try{
                 val cardLst=RetrofitInstance.service.getCards()
-                dataErrorLoading=dataErrorLoading.copy(loading = false, cards = cardLst)
-                _cards.value=dataErrorLoading
-
-                Log.d("Successful","card list successfully fetched")
-
+                _cards.value = DataErrorLoading(loading = false, cards = cardLst)
+                reselectCard()
+                Log.d(TAG,"card list successfully fetched")
+            }
+            catch (e: CancellationException) {
+                throw e
             }
             catch(e: Exception){
-                dataErrorLoading=dataErrorLoading.copy(error="Error Fetching Cards ${e.message}")
-                _cards.value=dataErrorLoading
-
-                Log.e("unsuccessful","Failed to fetch",e)
-
-
-
-            }
-        }
-    }
-
-    fun addTransaction( transaction:Transaction,cardId:Int){
-        viewModelScope.launch {
-            val dataErrorLoading= DataErrorLoading()
-
-            try{
-                val newCardBalanceTransactionDTO= RetrofitInstance.service.addTransaction(cardId,transaction)
-                val newTransaction= newCardBalanceTransactionDTO.responseTransactionDTO
-                if (newTransaction == null) {
-                    Log.e("AddTransaction", "Backend returned null transaction")
-
-
-                }
-                var transactionList:List<Transaction> =selectedCard.transaction
-                transactionList= transactionList+newTransaction
-
-
-                val newCard:Card=selectedCard.copy( balance = newCardBalanceTransactionDTO.balance, creditsUsed = newCardBalanceTransactionDTO.creditsUsed, transaction=transactionList)
-                val newCardList= cards.value.cards.toMutableList()
-                newCardList.set(selectedCardIndex,newCard)
-                _cards.value=dataErrorLoading.copy(loading=false,cards=newCardList.toList())
-                selectedCard=newCardList.get(selectedCardIndex)
-                Log.d("Successful","transaction successfully fetched")
-
-            }
-            catch(e: Exception){
-                _cards.value= dataErrorLoading.copy(error=" Error to Fetch ${e.message}")
-                Log.e("unsuccessful","Failed to fetch",e)
-
-            }
-        }
-
-    }
-
-    fun editTransaction(t: Transaction, cId:Int, tId:Int){
-        viewModelScope.launch {
-            val dataErrorLoading = DataErrorLoading()
-            try {
-
-                val responseEntity = RetrofitInstance.service.editTransaction(t, cId, tId)
-
-
-                val cardBalanceTransactionDTO = responseEntity.body()
-                val newTransaction =
-                    cardBalanceTransactionDTO!!.responseTransactionDTO// edited transaction
-                if (newTransaction == null) {
-                    Log.d(TAG, "Backend returned null transaction")
-                    toastMessage.value = "No Balance"
+                Log.e(TAG,"Failed to fetch cards",e)
+                if (_cards.value.cards.isEmpty()) {
+                    // Nothing to show yet: the screens show this with a Retry button
+                    _cards.value = _cards.value.copy(loading = false, error = e.toUserMessage())
                 } else {
-                    val newTransactionList = selectedCard.transaction.toMutableList()
-                    newTransactionList.set(transactionIndex, newTransaction)// new trnasction list
-
-                    val newCard = selectedCard.copy(
-                        balance = cardBalanceTransactionDTO.balance,
-                        creditsUsed = cardBalanceTransactionDTO.creditsUsed,
-                        transaction = newTransactionList
-                    )// new cardObject
-
-                    val newCardList = _cards.value.cards.toMutableList()
-                    newCardList.set(selectedCardIndex, newCard)
-                    selectedCard = newCardList.get(selectedCardIndex)
-                    _cards.value =
-                        dataErrorLoading.copy(loading = false, cards = newCardList.toList())
-                    toastMessage.value = "SuccessFully Edited"
+                    showMessage(e.toUserMessage())
                 }
-
-
-
-        }
-            catch(exception: Exception){
-                _cards.value= dataErrorLoading.copy(error = "Error to Fetch ${exception.message}")
-
-
-            }
-        }
-    }
-    fun deleteTransaction( cId:Int, tId:Int){
-        viewModelScope.launch {
-            val dataErrorLoading = DataErrorLoading()
-            try {
-                val responseEntity = RetrofitInstance.service.deleteTransaction( cId, tId)
-
-
-
-
-                val cardBalanceTransactionDTO = responseEntity.body()!!
-                if(cardBalanceTransactionDTO.responseTransactionDTO==null){
-                    val newTransactionList = selectedCard.transaction.toMutableList()
-                    newTransactionList.removeAt(transactionIndex)// new trnasction list
-
-                    val newCard = selectedCard.copy(
-                        balance = cardBalanceTransactionDTO.balance,
-                        creditsUsed = cardBalanceTransactionDTO.creditsUsed,
-                        transaction = newTransactionList
-                    )// new cardObject
-
-                    val newCardList = _cards.value.cards.toMutableList()
-                    newCardList.set(selectedCardIndex, newCard)
-                    selectedCard = newCardList.get(selectedCardIndex)
-                    _cards.value =
-                        dataErrorLoading.copy(loading = false, cards = newCardList.toList())
-                    toastMessage.value = "SuccessFully Deleted"
-
-                }
-
-
-
-
-            }
-            catch(exception: Exception){
-                _cards.value= dataErrorLoading.copy(error = "Error to Fetch ${exception.message}")
-
-
             }
         }
     }
 
-
-    fun editCard(card:Card, cardId:Int){
-        viewModelScope.launch {
-            val dataErrorLoading= DataErrorLoading()
-
-            try{
-                val responseCardDTO= RetrofitInstance.service.editCard(card,cardId)
-                var newCard= responseCardDTO
-                newCard= newCard.copy(transaction=selectedCard.transaction)
-                val newCardList= _cards.value.cards.toMutableList()
-                newCardList.set(selectedCardIndex,newCard)
-                _cards.value= dataErrorLoading.copy(loading = false, cards=newCardList.toList())
-                selectedCard= _cards.value.cards.get(selectedCardIndex)
-                Log.d("TAG","Edited and Fetched")
-
-
-            }
-            catch (e: Exception){
-                Log.e("unsuccessful","Failed to Edit",e)
-
-            }
-
-
-
-        }
-
+    fun addTransaction( transaction:Transaction,cardId:Int) = launchApi("Add transaction") {
+        val response = RetrofitInstance.service.addTransaction(cardId, transaction)
+        val newTransaction = response.responseTransactionDTO
+            ?: throw IllegalStateException("Backend returned no transaction")
+        replaceSelectedCard(
+            selectedCard.copy(
+                balance = response.balance,
+                creditsUsed = response.creditsUsed,
+                transaction = selectedCard.transaction + newTransaction
+            )
+        )
+        showMessage(if (newTransaction.income) "Income added" else "Expense added")
     }
-    fun deleteCard( cardId:Int){
-        viewModelScope.launch {
-            val dataErrorLoading= DataErrorLoading()
 
-            try{
-                val delete= RetrofitInstance.service.deleteCard(cardId)
-                if(delete){
-                    val newCardList= _cards.value.cards.toMutableList()
-                    newCardList.removeAt(selectedCardIndex)
+    fun editTransaction(t: Transaction, cId:Int, tId:Int) = launchApi("Edit transaction") {
+        val response = RetrofitInstance.service.editTransaction(t, cId, tId)
+        val newTransaction = response.responseTransactionDTO
+            ?: throw IllegalStateException("Backend returned no transaction")
+        val newTransactionList = selectedCard.transaction.toMutableList()
+        val index = newTransactionList.indexOfFirst { it.id == tId }
+        if (index >= 0) newTransactionList[index] = newTransaction
+        replaceSelectedCard(
+            selectedCard.copy(
+                balance = response.balance,
+                creditsUsed = response.creditsUsed,
+                transaction = newTransactionList
+            )
+        )
+        showMessage("Transaction updated")
+    }
 
-                    _cards.value= dataErrorLoading.copy(loading = false, cards=newCardList.toList())
-                    selectedCard=Card()
-                    selectedCardIndex=-1
-                    Log.d(TAG,"Deleted ")
-
-                }
-                else{
-                    Log.d(TAG,"Not Deleled ")
-
-                }
-
-
-            }
-            catch (e: Exception){
-                Log.e("unsuccessful","Failed to Edit",e)
-
-            }
-
-
-
-        }
-
+    fun deleteTransaction( cId:Int, tId:Int) = launchApi("Delete transaction") {
+        val response = RetrofitInstance.service.deleteTransaction(cId, tId)
+        val newTransactionList = selectedCard.transaction.filter { it.id != tId }
+        replaceSelectedCard(
+            selectedCard.copy(
+                balance = response.balance,
+                creditsUsed = response.creditsUsed,
+                transaction = newTransactionList
+            )
+        )
+        showMessage("Transaction deleted")
     }
 
 
+    fun deleteCard( cardId:Int) = launchApi("Delete card") {
+        RetrofitInstance.service.deleteCard(cardId)
+        val newCardList = _cards.value.cards.filter { it.cardId != cardId }
+        _cards.value = _cards.value.copy(loading = false, error = null, cards = newCardList)
+        selectCard(0) // first remaining card, or none
+        showMessage("Card deleted")
+    }
 
 
-
-
+    private companion object {
+        const val TAG = "ViewModel"
+        const val MAX_AMOUNT_DIGITS = 9 // keeps the amount inside Int
+    }
 }
